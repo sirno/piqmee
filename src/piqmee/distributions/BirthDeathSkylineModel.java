@@ -1,27 +1,26 @@
 package piqmee.distributions;
 
-
-import beast.core.BEASTInterface;
-import beast.core.Citation;
-import beast.core.Description;
-import beast.core.Input;
-import beast.core.MCMC;
-import beast.core.Operator;
-import beast.core.StateNode;
-import beast.core.parameter.BooleanParameter;
-import beast.core.parameter.IntegerParameter;
-import beast.core.parameter.RealParameter;
-import beast.evolution.alignment.Taxon;
-import beast.evolution.operators.Exchange;
-import beast.evolution.operators.ScaleOperator;
-import beast.evolution.operators.SubtreeSlide;
-import beast.evolution.operators.TipDatesRandomWalker;
-import beast.evolution.operators.WilsonBalding;
-import beast.evolution.speciation.SpeciesTreeDistribution;
-import beast.evolution.tree.Node;
-import beast.evolution.tree.Tree;
-import beast.evolution.tree.TreeInterface;
-import beast.math.distributions.Uniform;
+import beast.base.core.BEASTInterface;
+import beast.base.core.Citation;
+import beast.base.core.Description;
+import beast.base.core.Input;
+import beast.base.inference.MCMC;
+import beast.base.inference.Operator;
+import beast.base.inference.StateNode;
+import beast.base.inference.parameter.BooleanParameter;
+import beast.base.inference.parameter.IntegerParameter;
+import beast.base.inference.parameter.RealParameter;
+import beast.base.evolution.alignment.Taxon;
+import beast.base.evolution.operator.Exchange;
+import beast.base.evolution.operator.ScaleOperator;
+import beast.base.evolution.operator.SubtreeSlide;
+import beast.base.evolution.operator.TipDatesRandomWalker;
+import beast.base.evolution.operator.WilsonBalding;
+import beast.base.evolution.speciation.SpeciesTreeDistribution;
+import beast.base.evolution.tree.Node;
+import beast.base.evolution.tree.Tree;
+import beast.base.evolution.tree.TreeInterface;
+import beast.base.inference.distribution.Uniform;
 
 import java.util.*;
 
@@ -35,109 +34,119 @@ import org.apache.commons.math3.util.FastMath;
  * @author Alexei Drummond
  * @author Alexandra Gavryushkina
  *         <p/>
- *         maths: Tanja Stadler, sampled ancestor extension Alexandra Gavryushkina
+ *         maths: Tanja Stadler, sampled ancestor extension Alexandra
+ *         Gavryushkina
  */
 
 @Description("Adaptation of Tanja Stadler's BirthDeathSamplingModel, " +
         "to allow for birth and death rates to change at times t_i")
 @Citation(value = "Stadler, T., Kuehnert, D., Bonhoeffer, S., and Drummond, A. J. (2013):\n Birth-death skyline " +
-        "plot reveals temporal changes of\n epidemic spread in HIV and hepatitis C virus (HCV). PNAS 110(1): 228–33.\n" +
-        "If sampled ancestors are used then please also cite: Gavryushkina A, Welch D, Stadler T, Drummond AJ (2014) \n" +
+        "plot reveals temporal changes of\n epidemic spread in HIV and hepatitis C virus (HCV). PNAS 110(1): 228–33.\n"
+        +
+        "If sampled ancestors are used then please also cite: Gavryushkina A, Welch D, Stadler T, Drummond AJ (2014) \n"
+        +
         "Bayesian inference of sampled ancestor trees for epidemiology and fossil calibration. \n" +
-        "PLoS Comput Biol 10(12): e1003919. doi:10.1371/journal.pcbi.1003919",
-        year = 2013, firstAuthorSurname = "Stadler", DOI="10.1073/pnas.1207965110")
+        "PLoS Comput Biol 10(12): e1003919. doi:10.1371/journal.pcbi.1003919", year = 2013, firstAuthorSurname = "Stadler", DOI = "10.1073/pnas.1207965110")
 public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
 
     // the interval times for the birth rate
-    public Input<RealParameter> birthRateChangeTimesInput =
-            new Input<RealParameter>("birthRateChangeTimes", "The times t_i specifying when birth/R rate changes occur", (RealParameter) null);
+    public Input<RealParameter> birthRateChangeTimesInput = new Input<RealParameter>("birthRateChangeTimes",
+            "The times t_i specifying when birth/R rate changes occur", (RealParameter) null);
 
     // the interval times for the death rate
-    public Input<RealParameter> deathRateChangeTimesInput =
-            new Input<RealParameter>("deathRateChangeTimes", "The times t_i specifying when death/becomeUninfectious rate changes occur", (RealParameter) null);
+    public Input<RealParameter> deathRateChangeTimesInput = new Input<RealParameter>("deathRateChangeTimes",
+            "The times t_i specifying when death/becomeUninfectious rate changes occur", (RealParameter) null);
 
     // the interval times for sampling rate
-    public Input<RealParameter> samplingRateChangeTimesInput =
-            new Input<RealParameter>("samplingRateChangeTimes", "The times t_i specifying when sampling rate or sampling proportion changes occur", (RealParameter) null);
+    public Input<RealParameter> samplingRateChangeTimesInput = new Input<RealParameter>("samplingRateChangeTimes",
+            "The times t_i specifying when sampling rate or sampling proportion changes occur", (RealParameter) null);
 
     // the interval times for removal probability
-    public Input<RealParameter> removalProbabilityChangeTimesInput =
-            new Input<RealParameter>("removalProbabilityChangeTimes", "The times t_i specifying when removal probability changes occur", (RealParameter) null);
+    public Input<RealParameter> removalProbabilityChangeTimesInput = new Input<RealParameter>(
+            "removalProbabilityChangeTimes", "The times t_i specifying when removal probability changes occur",
+            (RealParameter) null);
 
-    public Input<RealParameter> intervalTimes =
-            new Input<RealParameter>("intervalTimes", "The time t_i for all parameters if they are the same", (RealParameter) null);
+    public Input<RealParameter> intervalTimes = new Input<RealParameter>("intervalTimes",
+            "The time t_i for all parameters if they are the same", (RealParameter) null);
 
-    public Input<Boolean> birthRateChangeTimesRelativeInput =
-            new Input<Boolean>("birthRateTimesRelative", "True if birth rate change times specified relative to tree height? Default false", false);
+    public Input<Boolean> birthRateChangeTimesRelativeInput = new Input<Boolean>("birthRateTimesRelative",
+            "True if birth rate change times specified relative to tree height? Default false", false);
 
-    public Input<Boolean> deathRateChangeTimesRelativeInput =
-            new Input<Boolean>("deathRateTimesRelative", "True if death rate change times specified relative to tree height? Default false", false);
+    public Input<Boolean> deathRateChangeTimesRelativeInput = new Input<Boolean>("deathRateTimesRelative",
+            "True if death rate change times specified relative to tree height? Default false", false);
 
-    public Input<Boolean> samplingRateChangeTimesRelativeInput =
-            new Input<Boolean>("samplingRateTimesRelative", "True if sampling rate times specified relative to tree height? Default false", false);
+    public Input<Boolean> samplingRateChangeTimesRelativeInput = new Input<Boolean>("samplingRateTimesRelative",
+            "True if sampling rate times specified relative to tree height? Default false", false);
 
-    Input<Boolean> removalProbabilityChangeTimesRelativeInput =
-            new Input<Boolean>("removalProbabilityTimesRelative", "True if removal probability change times specified relative to tree height? Default false", false);
+    Input<Boolean> removalProbabilityChangeTimesRelativeInput = new Input<Boolean>("removalProbabilityTimesRelative",
+            "True if removal probability change times specified relative to tree height? Default false", false);
 
-    public Input<BooleanParameter> reverseTimeArraysInput =
-            new Input<BooleanParameter>("reverseTimeArrays", "True if the time arrays are given in backwards time (from the present back to root). Order: 1) birth 2) death 3) sampling 4) rho 5) r. Default false." +
+    public Input<BooleanParameter> reverseTimeArraysInput = new Input<BooleanParameter>("reverseTimeArrays",
+            "True if the time arrays are given in backwards time (from the present back to root). Order: 1) birth 2) death 3) sampling 4) rho 5) r. Default false."
+                    +
                     "Careful, rate array must still be given in FORWARD time (root to tips). If rhosamplingTimes given, they should be backwards and this should be true.");
 
     // the times for rho sampling
-    public Input<RealParameter> rhoSamplingTimes =
-            new Input<RealParameter>("rhoSamplingTimes", "The times t_i specifying when rho-sampling occurs", (RealParameter) null);
+    public Input<RealParameter> rhoSamplingTimes = new Input<RealParameter>("rhoSamplingTimes",
+            "The times t_i specifying when rho-sampling occurs", (RealParameter) null);
 
+    public Input<RealParameter> origin = new Input<RealParameter>("origin",
+            "The time from origin to last sample (must be larger than tree height)", (RealParameter) null);
 
-    public Input<RealParameter> origin =
-            new Input<RealParameter>("origin", "The time from origin to last sample (must be larger than tree height)", (RealParameter) null);
-
-    public Input<Boolean> originIsRootEdge =
-            new Input<>("originIsRootEdge", "The origin is only the length of the root edge", false);
+    public Input<Boolean> originIsRootEdge = new Input<>("originIsRootEdge",
+            "The origin is only the length of the root edge", false);
 
     public Input<Boolean> conditionOnRootInput = new Input<Boolean>("conditionOnRoot", "the tree " +
             "likelihood is conditioned on the root height otherwise on the time of origin", false);
 
-    public Input<RealParameter> birthRate =
-            new Input<RealParameter>("birthRate", "BirthRate = BirthRateVector * birthRateScalar, birthrate can change over time");
-    public Input<RealParameter> deathRate =
-            new Input<RealParameter>("deathRate", "The deathRate vector with birthRates between times");
-    public Input<RealParameter> samplingRate =
-            new Input<RealParameter>("samplingRate", "The sampling rate per individual");      // psi
-    public Input<RealParameter> removalProbability =
-            new Input<RealParameter>("removalProbability", "The probability of an individual to become noninfectious immediately after the sampling");
+    public Input<RealParameter> birthRate = new Input<RealParameter>("birthRate",
+            "BirthRate = BirthRateVector * birthRateScalar, birthrate can change over time");
+    public Input<RealParameter> deathRate = new Input<RealParameter>("deathRate",
+            "The deathRate vector with birthRates between times");
+    public Input<RealParameter> samplingRate = new Input<RealParameter>("samplingRate",
+            "The sampling rate per individual"); // psi
+    public Input<RealParameter> removalProbability = new Input<RealParameter>("removalProbability",
+            "The probability of an individual to become noninfectious immediately after the sampling");
 
-    public Input<RealParameter> m_rho =
-            new Input<RealParameter>("rho", "The proportion of lineages sampled at rho-sampling times (default 0.)");
-    public Input<Boolean> contemp =
-            new Input<Boolean>("contemp", "Only contemporaneous sampling (i.e. all tips are from same sampling time, default false)", false);
+    public Input<RealParameter> m_rho = new Input<RealParameter>("rho",
+            "The proportion of lineages sampled at rho-sampling times (default 0.)");
+    public Input<Boolean> contemp = new Input<Boolean>("contemp",
+            "Only contemporaneous sampling (i.e. all tips are from same sampling time, default false)", false);
 
-    public Input<RealParameter> reproductiveNumberInput =
-            new Input<RealParameter>("reproductiveNumber", "The basic / effective reproduction number");
-    public Input<RealParameter> becomeUninfectiousRate =
-            new Input<RealParameter>("becomeUninfectiousRate", "Rate at which individuals become uninfectious (through recovery or sampling)");
-    public Input<RealParameter> samplingProportion =
-            new Input<RealParameter>("samplingProportion", "The samplingProportion = samplingRate / becomeUninfectiousRate");
+    public Input<RealParameter> reproductiveNumberInput = new Input<RealParameter>("reproductiveNumber",
+            "The basic / effective reproduction number");
+    public Input<RealParameter> becomeUninfectiousRate = new Input<RealParameter>("becomeUninfectiousRate",
+            "Rate at which individuals become uninfectious (through recovery or sampling)");
+    public Input<RealParameter> samplingProportion = new Input<RealParameter>("samplingProportion",
+            "The samplingProportion = samplingRate / becomeUninfectiousRate");
 
-    public Input<RealParameter> netDiversification = new Input<RealParameter>("netDiversification", "The net diversification rate");
+    public Input<RealParameter> netDiversification = new Input<RealParameter>("netDiversification",
+            "The net diversification rate");
     public Input<RealParameter> turnOver = new Input<RealParameter>("turnOver", "The turn over rate");
 
-    public Input<Boolean> forceRateChange =
-            new Input<Boolean>("forceRateChange", "If there is more than one interval and we estimate the time of rate change, do we enforce it to be within the tree interval? Default true", true);
-    public Input<Boolean> conditionOnSurvival =
-            new Input<Boolean>("conditionOnSurvival", "if is true then condition on sampling at least one individual (psi-sampling).", true);
-    public Input<Boolean> conditionOnRhoSampling =
-            new Input<Boolean> ("conditionOnRhoSampling","if is true then condition on sampling at least one individual at present.", false);
-    public Input<Taxon> taxonInput = new Input<Taxon>("taxon", "a name of the taxon for which to calculate the prior probability of" +
-            "being sampled ancestor under the model", (Taxon) null);
+    public Input<Boolean> forceRateChange = new Input<Boolean>("forceRateChange",
+            "If there is more than one interval and we estimate the time of rate change, do we enforce it to be within the tree interval? Default true",
+            true);
+    public Input<Boolean> conditionOnSurvival = new Input<Boolean>("conditionOnSurvival",
+            "if is true then condition on sampling at least one individual (psi-sampling).", true);
+    public Input<Boolean> conditionOnRhoSampling = new Input<Boolean>("conditionOnRhoSampling",
+            "if is true then condition on sampling at least one individual at present.", false);
+    public Input<Taxon> taxonInput = new Input<Taxon>("taxon",
+            "a name of the taxon for which to calculate the prior probability of" +
+                    "being sampled ancestor under the model",
+            (Taxon) null);
 
-    public final Input<IntegerParameter> SATaxonInput = new Input<IntegerParameter>("SAtaxon", "A binary parameter which is equal to zero " +
-            "if the taxon is not a sampled ancestor (that is, it does not have sampled descendants) and to one " +
-            "if it is a sampled ancestor (that is, it has sampled descendants)", (IntegerParameter)null);
+    public final Input<IntegerParameter> SATaxonInput = new Input<IntegerParameter>("SAtaxon",
+            "A binary parameter which is equal to zero " +
+                    "if the taxon is not a sampled ancestor (that is, it does not have sampled descendants) and to one "
+                    +
+                    "if it is a sampled ancestor (that is, it has sampled descendants)",
+            (IntegerParameter) null);
 
     protected double[] p0, p0hat;
     protected double[] Ai, Aihat;
     protected double[] Bi, Bihat;
-    protected int[] N;   // number of leaves sampled at each time t_i
+    protected int[] N; // number of leaves sampled at each time t_i
     protected String taxonName;
     protected double taxonAge;
 
@@ -148,13 +157,13 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
     protected double[] rho;
     protected double[] r;
 
-    // true if the node of the given index occurs at the time of a rho-sampling event
+    // true if the node of the given index occurs at the time of a rho-sampling
+    // event
     protected boolean[] isRhoTip;
 
-    double [] nodeHeights;
-    int [] indexCache;
-    
-    
+    double[] nodeHeights;
+    int[] indexCache;
+
     /**
      * The number of change points in the birth rate
      */
@@ -194,10 +203,10 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
     protected List<Double> rChangeTimes = new ArrayList<Double>();
 
     Boolean contempData;
-    //List<Interval> intervals = new ArrayList<Interval>();
+    // List<Interval> intervals = new ArrayList<Interval>();
     SortedSet<Double> timesSet = new TreeSet<>();
 
-    protected double[] times = new double[]{0.};
+    protected double[] times = new double[] { 0. };
 
     protected Boolean transform, transform_d_r_s;
     Boolean m_forceRateChange;
@@ -210,8 +219,11 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
 
     public boolean SAModel;
 
-    protected enum ConditionOn {NONE, SURVIVAL, RHO_SAMPLING};
-    protected ConditionOn conditionOn=ConditionOn.SURVIVAL;
+    protected enum ConditionOn {
+        NONE, SURVIVAL, RHO_SAMPLING
+    };
+
+    protected ConditionOn conditionOn = ConditionOn.SURVIVAL;
 
     public Boolean printTempResults;
 
@@ -223,11 +235,13 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
             throw new RuntimeException("Origin parameter is not set when conditioning on the origin!");
         if (conditionOnRootInput.get() && origin.get() != null)
             throw new RuntimeException("Origin parameter should not be set when conditioning on the root!");
-        if (origin.get() != null && (!originIsRootEdge.get() && treeInput.get().getRoot().getHeight() >= origin.get().getValue()))
-            throw new RuntimeException("Origin parameter ("+origin.get().getValue()+") must be larger than " +
-                    "tree height("+treeInput.get().getRoot().getHeight()+"). Please change initial origin value!");
+        if (origin.get() != null
+                && (!originIsRootEdge.get() && treeInput.get().getRoot().getHeight() >= origin.get().getValue()))
+            throw new RuntimeException("Origin parameter (" + origin.get().getValue() + ") must be larger than " +
+                    "tree height(" + treeInput.get().getRoot().getHeight() + "). Please change initial origin value!");
 
-        if (removalProbability.get() != null) SAModel = true;
+        if (removalProbability.get() != null)
+            SAModel = true;
 
         birth = null;
         death = null;
@@ -237,7 +251,8 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
         birthRateChangeTimes.clear();
         deathRateChangeTimes.clear();
         samplingRateChangeTimes.clear();
-        if (SAModel) rChangeTimes.clear();
+        if (SAModel)
+            rChangeTimes.clear();
         totalIntervals = 0;
         totalIntervalsMinus1 = -1;
 
@@ -245,12 +260,13 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
         birthRateTimesRelative = birthRateChangeTimesRelativeInput.get();
         deathRateTimesRelative = deathRateChangeTimesRelativeInput.get();
         samplingRateTimesRelative = samplingRateChangeTimesRelativeInput.get();
-        if (SAModel) rTimesRelative = removalProbabilityChangeTimesRelativeInput.get();
+        if (SAModel)
+            rTimesRelative = removalProbabilityChangeTimesRelativeInput.get();
 
-        if (reverseTimeArraysInput.get()!= null )
+        if (reverseTimeArraysInput.get() != null)
             reverseTimeArrays = reverseTimeArraysInput.get().getValues();
         else
-            reverseTimeArrays = new Boolean[]{false, false, false, false, false};
+            reverseTimeArrays = new Boolean[] { false, false, false, false, false };
 
         contempData = contemp.get();
         // rhoSamplingCount = 0;
@@ -262,13 +278,16 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
             birth = birthRate.get().getDoubleValues();
             death = deathRate.get().getDoubleValues();
             psi = samplingRate.get().getDoubleValues();
-            if (SAModel) r = removalProbability.get().getDoubleValues();
+            if (SAModel)
+                r = removalProbability.get().getDoubleValues();
 
-        } else if (reproductiveNumberInput.get() != null && becomeUninfectiousRate.get() != null && samplingProportion.get() != null) {
+        } else if (reproductiveNumberInput.get() != null && becomeUninfectiousRate.get() != null
+                && samplingProportion.get() != null) {
 
             transform = true;
 
-        } else if ((netDiversification.get() != null || birthRate.get() != null) && turnOver.get() != null && samplingProportion.get() != null) {
+        } else if ((netDiversification.get() != null || birthRate.get() != null) && turnOver.get() != null
+                && samplingProportion.get() != null) {
 
             transform_d_r_s = true;
 
@@ -280,7 +299,8 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
 
         if (transform) {
 
-            if (birthChanges < 1) birthChanges = reproductiveNumberInput.get().getDimension() - 1;
+            if (birthChanges < 1)
+                birthChanges = reproductiveNumberInput.get().getDimension() - 1;
             samplingChanges = samplingProportion.get().getDimension() - 1;
             deathChanges = becomeUninfectiousRate.get().getDimension() - 1;
 
@@ -295,14 +315,16 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
 
         } else {
 
-            if (birthChanges < 1) birthChanges = birthRate.get().getDimension() - 1;
+            if (birthChanges < 1)
+                birthChanges = birthRate.get().getDimension() - 1;
             deathChanges = deathRate.get().getDimension() - 1;
             samplingChanges = samplingRate.get().getDimension() - 1;
         }
 
-        if (SAModel) rChanges = removalProbability.get().getDimension() -1;
+        if (SAModel)
+            rChanges = removalProbability.get().getDimension() - 1;
 
-        if (m_rho.get()!=null) {
+        if (m_rho.get() != null) {
             rho = m_rho.get().getDoubleValues();
             rhoChanges = m_rho.get().getDimension() - 1;
         }
@@ -312,12 +334,16 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
         if (m_rho.get() != null) {
             // constantRho = !(m_rho.get().getDimension() > 1);
 
-            if (m_rho.get().getDimension() == 1 && rhoSamplingTimes.get()==null || rhoSamplingTimes.get().getDimension() < 2) {
-                if (!contempData && ((samplingProportion.get() != null && samplingProportion.get().getDimension() == 1 && samplingProportion.get().getValue() == 0.) ||
-                        (samplingRate.get() != null && samplingRate.get().getDimension() == 1 && samplingRate.get().getValue() == 0.))) {
+            if (m_rho.get().getDimension() == 1 && rhoSamplingTimes.get() == null
+                    || rhoSamplingTimes.get().getDimension() < 2) {
+                if (!contempData && ((samplingProportion.get() != null && samplingProportion.get().getDimension() == 1
+                        && samplingProportion.get().getValue() == 0.) ||
+                        (samplingRate.get() != null && samplingRate.get().getDimension() == 1
+                                && samplingRate.get().getValue() == 0.))) {
                     contempData = true;
                     if (printTempResults)
-                        System.out.println("Parameters were chosen for contemporaneously sampled data. Setting contemp=true.");
+                        System.out.println(
+                                "Parameters were chosen for contemporaneously sampled data. Setting contemp=true.");
                 }
             }
 
@@ -342,13 +368,15 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
         if (conditionOnSurvival.get()) {
             conditionOn = ConditionOn.SURVIVAL;
             if (conditionOnRhoSampling.get()) {
-                throw new RuntimeException("conditionOnSurvival and conditionOnRhoSampling can not be both true at the same time." +
-                        "Set one of them to true and another one to false.");
+                throw new RuntimeException(
+                        "conditionOnSurvival and conditionOnRhoSampling can not be both true at the same time." +
+                                "Set one of them to true and another one to false.");
             }
         } else if (conditionOnRhoSampling.get()) {
             if (!rhoSamplingConditionHolds()) {
-                throw new RuntimeException("Conditioning on rho-sampling is only available for sampled ancestor analyses where r " +
-                        "is set to zero and all except the last rho are zero");
+                throw new RuntimeException(
+                        "Conditioning on rho-sampling is only available for sampled ancestor analyses where r " +
+                                "is set to zero and all except the last rho are zero");
             }
             conditionOn = ConditionOn.RHO_SAMPLING;
         } else {
@@ -358,7 +386,8 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
         // sanity check for sampled ancestor analysis
         // make sure that operators are valid for such an analysis
         boolean isSAAnalysis = false;
-        if (removalProbability.get() != null && removalProbability.get().getValue() >= 1.0 && removalProbability.get().isEstimatedInput.get()) {
+        if (removalProbability.get() != null && removalProbability.get().getValue() >= 1.0
+                && removalProbability.get().isEstimatedInput.get()) {
             // default parameters have estimated=true by default.
             // check there is an operator on this parameter
             for (BEASTInterface o : removalProbability.get().getOutputs()) {
@@ -404,80 +433,86 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
                 throw new IllegalArgumentException("If the taxon input is specified SAInput also has to be specified");
             }
             if (conditionOnRootInput.get()) {
-                throw new RuntimeException("Calculate the prior probability of a taxon is not implemented under the model" +
-                        "with conditionOnTheRoot option!");
+                throw new RuntimeException(
+                        "Calculate the prior probability of a taxon is not implemented under the model" +
+                                "with conditionOnTheRoot option!");
             }
             taxonName = taxonInput.get().getID();
             TreeInterface tree = treeInput.get();
             taxonAge = 0.0;
-            for (int i=0; i<tree.getLeafNodeCount(); i++) {
-                Node node=tree.getNode(i);
+            for (int i = 0; i < tree.getLeafNodeCount(); i++) {
+                Node node = tree.getNode(i);
                 if (taxonName.equals(node.getID())) {
                     taxonAge = node.getHeight();
                 }
             }
         }
-        
+
         nodeHeights = new double[treeInput.get().getNodeCount()];
         Arrays.fill(nodeHeights, -1);
         indexCache = new int[treeInput.get().getNodeCount()];
     }
 
     private List<Operator> getOperators(BEASTInterface o) {
-    	for (BEASTInterface out : o.getOutputs()) {
-    		if (out instanceof MCMC) {
-    			return ((MCMC)out).operatorsInput.get();
-    		} else {
-    			List<Operator> list = getOperators(out);
-    			if (list != null) {
-    				return list;
-    			}
-    		}
-    	}
-		return null;
-	}
+        for (BEASTInterface out : o.getOutputs()) {
+            if (out instanceof MCMC) {
+                return ((MCMC) out).operatorsInput.get();
+            } else {
+                List<Operator> list = getOperators(out);
+                if (list != null) {
+                    return list;
+                }
+            }
+        }
+        return null;
+    }
 
     /**
      * checks if r is zero, all elements of rho except the last one are
      * zero and the last one is not zero
+     *
      * @return
      */
     private boolean rhoSamplingConditionHolds() {
 
         if (SAModel) {
-            for (int i=0; i<removalProbability.get().getDimension(); i++) {
+            for (int i = 0; i < removalProbability.get().getDimension(); i++) {
                 if (removalProbability.get().getValue(i) != 0.0) {
                     return false;
                 }
             }
-        } else return false;
+        } else
+            return false;
 
-        for (int i=0; i<rho.length-1; i++) {
+        for (int i = 0; i < rho.length - 1; i++) {
             if (rho[i] != 0.0) {
                 return false;
             }
         }
 
-        return (rho[rho.length-1] != 0.0);
+        return (rho[rho.length - 1] != 0.0);
     }
 
     /**
      * @return a list of intervals
      */
-    public void getChangeTimes(List<Double> changeTimes, RealParameter intervalTimes, int numChanges, boolean relative, boolean reverse) {
+    public void getChangeTimes(List<Double> changeTimes, RealParameter intervalTimes, int numChanges, boolean relative,
+            boolean reverse) {
         changeTimes.clear();
 
-        if (printTempResults) System.out.println("relative = " + relative);
+        if (printTempResults)
+            System.out.println("relative = " + relative);
 
         double maxTime;
 
         if (origin.get() != null) {
-            maxTime = originIsRootEdge.get()? treeInput.get().getRoot().getHeight() + origin.get().getValue() :origin.get().getValue();
+            maxTime = originIsRootEdge.get() ? treeInput.get().getRoot().getHeight() + origin.get().getValue()
+                    : origin.get().getValue();
         } else {
             maxTime = treeInput.get().getRoot().getHeight();
         }
 
-        if (intervalTimes == null) { //equidistant
+        if (intervalTimes == null) { // equidistant
 
             double intervalWidth = maxTime / (numChanges + 1);
 
@@ -492,13 +527,14 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
         } else {
 
             if ((!isBDSIR()) && numChanges > 0 && intervalTimes.getDimension() != numChanges + 1) {
-                throw new RuntimeException("The time interval parameter should be numChanges + 1 long (" + (numChanges + 1) + ").");
+                throw new RuntimeException(
+                        "The time interval parameter should be numChanges + 1 long (" + (numChanges + 1) + ").");
             }
 
             int dim = intervalTimes.getDimension();
 
             ArrayList<Double> sortedIntervalTimes = new ArrayList<>();
-            for (int i=0; i< dim; i++) {
+            for (int i = 0; i < dim; i++) {
                 sortedIntervalTimes.add(intervalTimes.getValue(i));
             }
             Collections.sort(sortedIntervalTimes);
@@ -507,13 +543,16 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
                 throw new RuntimeException("First time in interval times parameter should always be zero.");
             }
 
-//            if(intervalTimes.getValue(dim-1)==maxTime) changeTimes.add(0.); //rhoSampling
+            // if(intervalTimes.getValue(dim-1)==maxTime) changeTimes.add(0.); //rhoSampling
 
             double end;
-            for (int i = (reverse?0:1); i < dim; i++) {
-                end = reverse? (relative?1.0:maxTime) - sortedIntervalTimes.get(dim - i - 1) :sortedIntervalTimes.get(i);
-                if (relative) end *= maxTime;
-                if (end != maxTime) changeTimes.add(end);
+            for (int i = (reverse ? 0 : 1); i < dim; i++) {
+                end = reverse ? (relative ? 1.0 : maxTime) - sortedIntervalTimes.get(dim - i - 1)
+                        : sortedIntervalTimes.get(i);
+                if (relative)
+                    end *= maxTime;
+                if (end != maxTime)
+                    changeTimes.add(end);
             }
             end = maxTime;
             changeTimes.add(end);
@@ -521,9 +560,12 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
     }
 
     /*
-    * Counts the number of tips at each of the contemporaneous sampling times ("rho" sampling time)
-    * @return negative infinity if tips are found at a time when rho is zero, zero otherwise.
-    */
+     * Counts the number of tips at each of the contemporaneous sampling times
+     * ("rho" sampling time)
+     *
+     * @return negative infinity if tips are found at a time when rho is zero, zero
+     * otherwise.
+     */
     protected double computeN(TreeInterface tree) {
 
         isRhoTip = new boolean[tree.getLeafNodeCount()];
@@ -541,10 +583,9 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
 
         for (int k = 0; k < totalIntervals; k++) {
 
-
             for (int i = 0; i < tipCount; i++) {
 
-                if (FastMath.abs(((times[totalIntervals - 1] - times[k]) - dates[i])/maxdate) < 1e-10) {
+                if (FastMath.abs(((times[totalIntervals - 1] - times[k]) - dates[i]) / maxdate) < 1e-10) {
                     if (rho[k] == 0 && psi[k] == 0) {
                         return Double.NEGATIVE_INFINITY;
                     }
@@ -570,7 +611,8 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
         }
 
         getChangeTimes(birthRateChangeTimes,
-                birthRateChangeTimesInput.get() != null && !isSeasonalBDSIR() ? birthRateChangeTimesInput.get() : intervalTimes.get(),
+                birthRateChangeTimesInput.get() != null && !isSeasonalBDSIR() ? birthRateChangeTimesInput.get()
+                        : intervalTimes.get(),
                 birthChanges, birthRateTimesRelative, reverseTimeArrays[0]);
 
         getChangeTimes(deathRateChangeTimes,
@@ -582,13 +624,16 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
                 samplingChanges, samplingRateTimesRelative, reverseTimeArrays[2]);
 
         getChangeTimes(rhoSamplingChangeTimes,
-                rhoSamplingTimes.get()!=null ? rhoSamplingTimes.get() : intervalTimes.get(),
+                rhoSamplingTimes.get() != null ? rhoSamplingTimes.get() : intervalTimes.get(),
                 rhoChanges, false, reverseTimeArrays[3]);
-        if (rhoSamplingTimes.get()!=null && rhoSamplingChangeTimes.size() > rhoSamplingTimes.get().getDimension()) rhoSamplingChangeTimes.remove(rhoSamplingChangeTimes.size()-1);
+        if (rhoSamplingTimes.get() != null && rhoSamplingChangeTimes.size() > rhoSamplingTimes.get().getDimension())
+            rhoSamplingChangeTimes.remove(rhoSamplingChangeTimes.size() - 1);
 
-        if (SAModel) getChangeTimes(rChangeTimes,
-                removalProbabilityChangeTimesInput.get() != null ? removalProbabilityChangeTimesInput.get() : intervalTimes.get(),
-                rChanges, rTimesRelative, reverseTimeArrays[4]);
+        if (SAModel)
+            getChangeTimes(rChangeTimes,
+                    removalProbabilityChangeTimesInput.get() != null ? removalProbabilityChangeTimesInput.get()
+                            : intervalTimes.get(),
+                    rChanges, rTimesRelative, reverseTimeArrays[4]);
 
         for (double time : birthRateChangeTimes) {
             timesSet.add(time);
@@ -611,30 +656,33 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
             }
         }
 
-        if (printTempResults) System.out.println("times = " + timesSet);
+        if (printTempResults)
+            System.out.println("times = " + timesSet);
 
         times = todouble(timesSet.toArray());
         totalIntervals = times.length;
         totalIntervalsMinus1 = totalIntervals - 1;
 
-        if (printTempResults) System.out.println("total intervals = " + totalIntervals);
+        if (printTempResults)
+            System.out.println("total intervals = " + totalIntervals);
     }
 
     private double[] todouble(Object[] array) {
-		double [] x = new double[array.length];
-		for (int i = 0; i < x.length; i++) {
-			x[i] = (Double) array[i];
-		}
-		return x;
-	}
+        double[] x = new double[array.length];
+        for (int i = 0; i < x.length; i++) {
+            x[i] = (Double) array[i];
+        }
+        return x;
+    }
 
-	protected Double updateRatesAndTimes(TreeInterface tree) {
+    protected Double updateRatesAndTimes(TreeInterface tree) {
 
         collectTimes();
 
         double t_root = tree.getRoot().getHeight();
 
-        if (origin.get() != null && (m_forceRateChange && timesSet.last() > (originIsRootEdge.get()? t_root+ origin.get().getValue() : origin.get().getValue()))) {
+        if (origin.get() != null && (m_forceRateChange && timesSet
+                .last() > (originIsRootEdge.get() ? t_root + origin.get().getValue() : origin.get().getValue()))) {
             return Double.NEGATIVE_INFINITY;
         }
 
@@ -652,33 +700,39 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
             double[] deathRates = deathRate.get().getDoubleValues();
             double[] samplingRates = samplingRate.get().getDoubleValues();
             double[] removalProbabilities = new double[1];
-            if (SAModel) removalProbabilities = removalProbability.get().getDoubleValues();
+            if (SAModel)
+                removalProbabilities = removalProbability.get().getDoubleValues();
 
             birth = new double[totalIntervals];
             death = new double[totalIntervals];
             psi = new double[totalIntervals];
-            if (SAModel) r =  new double[totalIntervals];
+            if (SAModel)
+                r = new double[totalIntervals];
 
             birth[0] = birthRates[0];
 
             for (int i = 0; i < totalIntervals; i++) {
-                if (!isBDSIR()) birth[i] = birthRates[index(times[i], birthRateChangeTimes)];
+                if (!isBDSIR())
+                    birth[i] = birthRates[index(times[i], birthRateChangeTimes)];
                 death[i] = deathRates[index(times[i], deathRateChangeTimes)];
                 psi[i] = samplingRates[index(times[i], samplingRateChangeTimes)];
-                if (SAModel) r[i] = removalProbabilities[index(times[i], rChangeTimes)];
+                if (SAModel)
+                    r[i] = removalProbabilities[index(times[i], rChangeTimes)];
             }
         }
 
         if (printTempResults) {
             for (int i = 0; i < totalIntervals; i++) {
-                if (!isBDSIR()) System.out.println("birth[" + i + "]=" + birth[i]);
+                if (!isBDSIR())
+                    System.out.println("birth[" + i + "]=" + birth[i]);
                 System.out.println("death[" + i + "]=" + death[i]);
                 System.out.println("psi[" + i + "]=" + psi[i]);
-                if (SAModel) System.out.println("r[" + i + "]=" + r[i]);
+                if (SAModel)
+                    System.out.println("r[" + i + "]=" + r[i]);
             }
         }
 
-        if (m_rho.get() != null && (m_rho.get().getDimension()==1 ||  rhoSamplingTimes.get() != null)) {
+        if (m_rho.get() != null && (m_rho.get().getDimension() == 1 || rhoSamplingTimes.get() != null)) {
 
             Double[] rhos = m_rho.get().getValues();
             rho = new double[totalIntervals];
@@ -698,11 +752,11 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
         return 0.;
     }
 
-
-    /*    calculate and store Ai, Bi and p0        */
+    /* calculate and store Ai, Bi and p0 */
     public Double preCalculation(TreeInterface tree) {
 
-        if (origin.get() != null && (!originIsRootEdge.get() && tree.getRoot().getHeight() >= origin.get().getValue()) &&  taxonInput.get() == null ) {
+        if (origin.get() != null && (!originIsRootEdge.get() && tree.getRoot().getHeight() >= origin.get().getValue())
+                && taxonInput.get() == null) {
             return Double.NEGATIVE_INFINITY;
         }
 
@@ -711,13 +765,14 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
             return Double.NEGATIVE_INFINITY;
         }
 
-        if (printTempResults) System.out.println("After update rates and times");
+        if (printTempResults)
+            System.out.println("After update rates and times");
 
         if (m_rho.get() != null) {
             if (contempData) {
                 rho = new double[totalIntervals];
                 Arrays.fill(rho, 0.);
-                rho[totalIntervals-1] = m_rho.get().getValue();
+                rho[totalIntervals - 1] = m_rho.get().getValue();
             }
 
         } else {
@@ -749,7 +804,8 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
                 Aihat[i] = Ai(birth[i], death[i], 0.0);
             }
 
-            if (printTempResults) System.out.println("Ai[" + i + "] = " + Ai[i] + " " + FastMathLog(Ai[i]));
+            if (printTempResults)
+                System.out.println("Ai[" + i + "] = " + Ai[i] + " " + FastMathLog(Ai[i]));
         }
 
         Bi[totalIntervals - 1] = Bi(
@@ -757,7 +813,7 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
                 death[totalIntervals - 1],
                 psi[totalIntervals - 1],
                 rho[totalIntervals - 1],
-                Ai[totalIntervals - 1], 1.);  //  (p0[m-1] = 1)
+                Ai[totalIntervals - 1], 1.); // (p0[m-1] = 1)
 
         if (conditionOn == ConditionOn.RHO_SAMPLING) {
             Bihat[totalIntervals - 1] = Bi(
@@ -765,7 +821,7 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
                     death[totalIntervals - 1],
                     0.0,
                     rho[totalIntervals - 1],
-                    Aihat[totalIntervals - 1], 1.);  //  (p0[m-1] = 1)
+                    Aihat[totalIntervals - 1], 1.); // (p0[m-1] = 1)
         }
 
         if (printTempResults)
@@ -782,22 +838,29 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
                     return Double.NEGATIVE_INFINITY;
                 }
             }
-            if (printTempResults) System.out.println("p0[" + (i + 1) + "] = " + p0[i + 1]);
+            if (printTempResults)
+                System.out.println("p0[" + (i + 1) + "] = " + p0[i + 1]);
 
             Bi[i] = Bi(birth[i], death[i], psi[i], rho[i], Ai[i], p0[i + 1]);
             if (conditionOn == ConditionOn.RHO_SAMPLING) {
                 Bihat[i] = Bi(birth[i], death[i], 0.0, rho[i], Aihat[i], p0hat[i + 1]);
             }
 
-            if (printTempResults) System.out.println("Bi[" + i + "] = " + Bi[i] + " " + FastMathLog(Bi[i]));
+            if (printTempResults)
+                System.out.println("Bi[" + i + "] = " + Bi[i] + " " + FastMathLog(Bi[i]));
         }
 
-        /* if (printTempResults) {
-            System.out.println("g(0, x0, 0):" + g(0, times[0], 0));
-            System.out.println("g(index(1),times[index(1)],1.) :" + g(index(1), times[index(1)], 1.));
-            System.out.println("g(index(2),times[index(2)],2.) :" + g(index(2), times[index(2)], 2));
-            System.out.println("g(index(4),times[index(4)],4.):" + g(index(4), times[index(4)], 4));
-        } */
+        /*
+         * if (printTempResults) {
+         * System.out.println("g(0, x0, 0):" + g(0, times[0], 0));
+         * System.out.println("g(index(1),times[index(1)],1.) :" + g(index(1),
+         * times[index(1)], 1.));
+         * System.out.println("g(index(2),times[index(2)],2.) :" + g(index(2),
+         * times[index(2)], 2));
+         * System.out.println("g(index(4),times[index(4)],4.):" + g(index(4),
+         * times[index(4)], 4));
+         * }
+         */
 
         return 0.;
     }
@@ -820,10 +883,13 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
     public double p0(double b, double g, double psi, double A, double B, double ti, double t) {
 
         if (printTempResults)
-            System.out.println("in p0: b = " + b + "; g = " + g + "; psi = " + psi + "; A = " + A + " ; B = " + B + "; ti = " + ti + "; t = " + t);
-        // return ((b + g + psi - A *((FastMathExp(A*(ti - t))*(1+B)-(1-B)))/(FastMathExp(A*(ti - t))*(1+B)+(1-B)) ) / (2*b));
+            System.out.println("in p0: b = " + b + "; g = " + g + "; psi = " + psi + "; A = " + A + " ; B = " + B
+                    + "; ti = " + ti + "; t = " + t);
+        // return ((b + g + psi - A *((FastMathExp(A*(ti -
+        // t))*(1+B)-(1-B)))/(FastMathExp(A*(ti - t))*(1+B)+(1-B)) ) / (2*b));
         // formula from manuscript slightly rearranged for numerical stability
-        return ((b + g + psi - A * ((1 + B) - (1 - B) * (FastMathExp(A * (t - ti)))) / ((1 + B) + FastMathExp(A * (t - ti)) * (1 - B))) / (2 * b));
+        return ((b + g + psi - A * ((1 + B) - (1 - B) * (FastMathExp(A * (t - ti))))
+                / ((1 + B) + FastMathExp(A * (t - ti)) * (1 - B))) / (2 * b));
     }
 
     public double p0hat(int index, double t, double ti) {
@@ -831,22 +897,27 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
         return p0(birth[index], death[index], 0.0, Aihat[index], Bihat[index], t, ti);
     }
 
-
     public double g(int index, double ti, double t) {
 
-        // return (FastMathExp(Ai[index]*(ti - t))) / (0.25*FastMath.pow((FastMathExp(Ai[index]*(ti - t))*(1+Bi[index])+(1-Bi[index])),2));
+        // return (FastMathExp(Ai[index]*(ti - t))) /
+        // (0.25*FastMath.pow((FastMathExp(Ai[index]*(ti -
+        // t))*(1+Bi[index])+(1-Bi[index])),2));
         // formula from manuscript slightly rearranged for numerical stability
-        return (4 * FastMathExp(Ai[index] * (t - ti))) / (FastMathExp(Ai[index] * (t - ti)) * (1 - Bi[index]) + (1 + Bi[index])) / (FastMathExp(Ai[index] * (t - ti)) * (1 - Bi[index]) + (1 + Bi[index]));
+        return (4 * FastMathExp(Ai[index] * (t - ti)))
+                / (FastMathExp(Ai[index] * (t - ti)) * (1 - Bi[index]) + (1 + Bi[index]))
+                / (FastMathExp(Ai[index] * (t - ti)) * (1 - Bi[index]) + (1 + Bi[index]));
     }
 
     public double log_q(int index, double ti, double t) {
         // replacing FastMathLog( g(...) ) for better numerical stability
-        return FastMathLog(4) + Ai[index] * (t - ti) - 2 * FastMathLog(FastMathExp(Ai[index] * (t - ti)) * (1 - Bi[index]) + (1 + Bi[index]));
+        return FastMathLog(4) + Ai[index] * (t - ti)
+                - 2 * FastMathLog(FastMathExp(Ai[index] * (t - ti)) * (1 - Bi[index]) + (1 + Bi[index]));
     }
 
     /**
      * @param t the time in question
-     * @return the index of the given time in the list of times, or if the time is not in the list, the index of the
+     * @return the index of the given time in the list of times, or if the time is
+     *         not in the list, the index of the
      *         next smallest time
      */
     public int index(double t, List<Double> times) {
@@ -860,10 +931,10 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
         return epoch;
     }
 
-
     /**
      * @param t the time in question
-     * @return the index of the given time in the times array, or if the time is not in the array the index of the time
+     * @return the index of the given time in the times array, or if the time is not
+     *         in the array the index of the time
      *         next smallest
      */
     public int index(double t) {
@@ -871,39 +942,37 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
         final double tt = times[totalIntervalsMinus1];
         if (t >= tt)
             return totalIntervalsMinus1;
-        
-//        final double t0 = times[0];
-//        int epoch = t <= t0 ? 0 : 1+(int)((totalIntervalsMinus1) * (t-t0)/(tt-t0));
-        
-        
+
+        // final double t0 = times[0];
+        // int epoch = t <= t0 ? 0 : 1+(int)((totalIntervalsMinus1) * (t-t0)/(tt-t0));
+
         int epoch = Arrays.binarySearch(times, t);
 
         if (epoch < 0) {
             epoch = -epoch - 1;
         }
 
-        
         return epoch;
     }
-
-
-
 
     /**
      * @param time the time
      * @param tree the tree
-     * @return the number of lineages that exist at the given time in the given tree.
+     * @return the number of lineages that exist at the given time in the given
+     *         tree.
      */
     public int lineageCountAtTime(double time, TreeInterface tree) {
 
         int count = 1;
         int tipCount = tree.getLeafNodeCount();
         for (int i = tipCount; i < tipCount + tree.getInternalNodeCount(); i++) {
-            if (tree.getNode(i).getHeight() > time) count += 1;
+            if (tree.getNode(i).getHeight() > time)
+                count += 1;
 
         }
         for (int i = 0; i < tipCount; i++) {
-            if (tree.getNode(i).getHeight() >= time) count -= 1;
+            if (tree.getNode(i).getHeight() >= time)
+                count -= 1;
         }
         return count;
     }
@@ -911,20 +980,23 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
     /**
      * @param time the time
      * @param tree the tree
-     * @param k count the number of sampled ancestors at the given time
-     * @return the number of lineages that exist at the given time in the given tree.
+     * @param k    count the number of sampled ancestors at the given time
+     * @return the number of lineages that exist at the given time in the given
+     *         tree.
      */
     public int lineageCountAtTime(double time, TreeInterface tree, int[] k) {
 
         int count = 1;
-        k[0]=0;
+        k[0] = 0;
         int tipCount = tree.getLeafNodeCount();
         for (int i = tipCount; i < tipCount + tree.getInternalNodeCount(); i++) {
-            if (tree.getNode(i).getHeight() >= time) count += 1;
+            if (tree.getNode(i).getHeight() >= time)
+                count += 1;
 
         }
         for (int i = 0; i < tipCount; i++) {
-            if (tree.getNode(i).getHeight() > time) count -= 1;
+            if (tree.getNode(i).getHeight() > time)
+                count -= 1;
             if (FastMath.abs(tree.getNode(i).getHeight() - time) < 1e-10) {
                 count -= 1;
                 if (tree.getNode(i).isDirectAncestor()) {
@@ -943,26 +1015,34 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
         Double[] b = becomeUninfectiousRate.get().getValues(); // delta = mu + psi*r
         Double[] p = samplingProportion.get().getValues(); // if SAModel: s = psi/(mu+psi)
         Double[] removalProbabilities = new Double[1];
-        if (SAModel) removalProbabilities = removalProbability.get().getValues();
+        if (SAModel)
+            removalProbabilities = removalProbability.get().getValues();
 
         birth = new double[totalIntervals];
         death = new double[totalIntervals];
         psi = new double[totalIntervals];
-        if (SAModel) r =  new double[totalIntervals];
+        if (SAModel)
+            r = new double[totalIntervals];
 
-        if (isBDSIR()) birth[0] = R[0] * b[0]; // the rest will be done in BDSIR class
+        if (isBDSIR())
+            birth[0] = R[0] * b[0]; // the rest will be done in BDSIR class
 
         for (int i = 0; i < totalIntervals; i++) {
             if (!SAModel) {
-                if (!isBDSIR()) birth[i] = R[birthChanges > 0 ? index(times[i], birthRateChangeTimes) : 0] * b[deathChanges > 0 ? index(times[i], deathRateChangeTimes) : 0];
-                psi[i] = p[samplingChanges > 0 ? index(times[i], samplingRateChangeTimes) : 0] * b[deathChanges > 0 ? index(times[i], deathRateChangeTimes) : 0];
+                if (!isBDSIR())
+                    birth[i] = R[birthChanges > 0 ? index(times[i], birthRateChangeTimes) : 0]
+                            * b[deathChanges > 0 ? index(times[i], deathRateChangeTimes) : 0];
+                psi[i] = p[samplingChanges > 0 ? index(times[i], samplingRateChangeTimes) : 0]
+                        * b[deathChanges > 0 ? index(times[i], deathRateChangeTimes) : 0];
                 death[i] = b[deathChanges > 0 ? index(times[i], deathRateChangeTimes) : 0] - psi[i];
             } else {
-                birth[i] = R[birthChanges > 0 ? index(times[i], birthRateChangeTimes) : 0] * b[deathChanges > 0 ? index(times[i], deathRateChangeTimes) : 0];
+                birth[i] = R[birthChanges > 0 ? index(times[i], birthRateChangeTimes) : 0]
+                        * b[deathChanges > 0 ? index(times[i], deathRateChangeTimes) : 0];
                 r[i] = removalProbabilities[rChanges > 0 ? index(times[i], rChangeTimes) : 0];
-                psi[i] = p[samplingChanges > 0 ? index(times[i], samplingRateChangeTimes) : 0] * b[deathChanges > 0 ? index(times[i], deathRateChangeTimes) : 0]
-                        / (1+(r[i]-1)*p[samplingChanges > 0 ? index(times[i], samplingRateChangeTimes) : 0]);
-                death[i] = b[deathChanges > 0 ? index(times[i], deathRateChangeTimes) : 0] - psi[i]*r[i];
+                psi[i] = p[samplingChanges > 0 ? index(times[i], samplingRateChangeTimes) : 0]
+                        * b[deathChanges > 0 ? index(times[i], deathRateChangeTimes) : 0]
+                        / (1 + (r[i] - 1) * p[samplingChanges > 0 ? index(times[i], samplingRateChangeTimes) : 0]);
+                death[i] = b[deathChanges > 0 ? index(times[i], deathRateChangeTimes) : 0] - psi[i] * r[i];
             }
         }
     }
@@ -972,22 +1052,25 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
         birth = new double[totalIntervals];
         death = new double[totalIntervals];
         psi = new double[totalIntervals];
-        if (SAModel) r =  new double[totalIntervals];
+        if (SAModel)
+            r = new double[totalIntervals];
 
-        /* nd = lambda - mu - r * psi         lambda = nd / (1 - to)
-           to = (mu + r * psi) / lambda  -->  psi = lambda * to * sp / (1 - sp + r * sp)
-           sp = psi / (mu + psi)              mu = lambda * to - r * psi
-           SAModel: 0 <= r < 1;  No SA: r = 1
-           Relation to transform: nd = (R0 - 1) * delta, to = 1/R0, sp = s  */
+        /*
+         * nd = lambda - mu - r * psi lambda = nd / (1 - to)
+         * to = (mu + r * psi) / lambda --> psi = lambda * to * sp / (1 - sp + r * sp)
+         * sp = psi / (mu + psi) mu = lambda * to - r * psi
+         * SAModel: 0 <= r < 1; No SA: r = 1
+         * Relation to transform: nd = (R0 - 1) * delta, to = 1/R0, sp = s
+         */
         Double[] to = turnOver.get().getValues();
         Double[] sp = samplingProportion.get().getValues();
 
-        if (netDiversification.get() != null) {  // netdiversification-turnover-samplingproportion parametrization
+        if (netDiversification.get() != null) { // netdiversification-turnover-samplingproportion parametrization
             Double[] nd = netDiversification.get().getValues();
             for (int i = 0; i < totalIntervals; i++) {
                 birth[i] = nd[index(times[i], birthRateChangeTimes)] / (1 - to[index(times[i], deathRateChangeTimes)]);
             }
-        } else {  // lambda-turnover-samplingproportion parametrization
+        } else { // lambda-turnover-samplingproportion parametrization
             Double[] br = birthRate.get().getValues();
             for (int i = 0; i < totalIntervals; i++) {
                 birth[i] = br[index(times[i], birthRateChangeTimes)];
@@ -998,12 +1081,14 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
             double[] rp = removalProbability.get().getDoubleValues();
             for (int i = 0; i < totalIntervals; i++) {
                 r[i] = rp[index(times[i], rChangeTimes)];
-                psi[i] = birth[i] * to[index(times[i], deathRateChangeTimes)] / (1 / sp[index(times[i], samplingRateChangeTimes)] - 1 + r[i]);
+                psi[i] = birth[i] * to[index(times[i], deathRateChangeTimes)]
+                        / (1 / sp[index(times[i], samplingRateChangeTimes)] - 1 + r[i]);
                 death[i] = birth[i] * to[index(times[i], deathRateChangeTimes)] - r[i] * psi[i];
             }
         } else {
             for (int i = 0; i < totalIntervals; i++) {
-                psi[i] = birth[i] * to[index(times[i], deathRateChangeTimes)] * sp[index(times[i], samplingRateChangeTimes)];
+                psi[i] = birth[i] * to[index(times[i], deathRateChangeTimes)]
+                        * sp[index(times[i], samplingRateChangeTimes)];
                 death[i] = birth[i] * to[index(times[i], deathRateChangeTimes)] - psi[i];
             }
         }
@@ -1049,7 +1134,7 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
                 if (temp == 1)
                     return Double.NEGATIVE_INFINITY;
                 if (conditionOnRootInput.get()) {
-                    temp = log_q(index, times[index], x0) - 2 * FastMathLog(1 - temp)- FastMathLog(birth[index]);
+                    temp = log_q(index, times[index], x0) - 2 * FastMathLog(1 - temp) - FastMathLog(birth[index]);
                 } else {
                     temp = log_q(index, times[index], x0) - FastMathLog(1 - temp);
                 }
@@ -1071,13 +1156,14 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
             if (SATaxonInput.get().getValue() == 0) {
                 logP += FastMathLog(p0(index, times[index], x));
             } else {
-                logP += FastMathLog(1-p0(index, times[index], x));
+                logP += FastMathLog(1 - p0(index, times[index], x));
             }
 
             return logP;
         }
 
-        if (printTempResults) System.out.println("first factor for origin = " + temp);
+        if (printTempResults)
+            System.out.println("first factor for origin = " + temp);
 
         // first product term in f[T]
         for (int i = 0; i < tree.getInternalNodeCount(); i++) {
@@ -1087,8 +1173,9 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
             if (!(tree.getNode(nTips + i)).isFake()) {
                 temp = FastMathLog(birth[index]) + log_q(index, times[index], x);
                 logP += temp;
-                if (printTempResults) System.out.println("1st pwd" +
-                        " = " + temp + "; interval = " + i);
+                if (printTempResults)
+                    System.out.println("1st pwd" +
+                            " = " + temp + "; interval = " + i);
                 if (Double.isInfinite(logP))
                     return logP;
             }
@@ -1105,20 +1192,23 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
                     if (!SAModel) {
                         temp = FastMathLog(psi[index]) - log_q(index, times[index], y);
                     } else {
-                        temp = FastMathLog(psi[index] * (r[index] + (1 - r[index]) * p0(index, times[index], y))) - log_q(index, times[index], y);
+                        temp = FastMathLog(psi[index] * (r[index] + (1 - r[index]) * p0(index, times[index], y)))
+                                - log_q(index, times[index], y);
                     }
                     logP += temp;
-                    if (printTempResults) System.out.println("2nd PI = " + temp);
+                    if (printTempResults)
+                        System.out.println("2nd PI = " + temp);
                     if (psi[index] == 0 || Double.isInfinite(logP))
                         return logP;
                 } else {
                     if (r[index] != 1) {
-                        logP += FastMathLog((1 - r[index])*psi[index]);
+                        logP += FastMathLog((1 - r[index]) * psi[index]);
                         if (Double.isInfinite(logP)) {
                             return logP;
                         }
                     } else {
-                        //throw new Exception("There is a sampled ancestor in the tree while r parameter is 1");
+                        // throw new Exception("There is a sampled ancestor in the tree while r
+                        // parameter is 1");
                         System.out.println("There is a sampled ancestor in the tree while r parameter is 1");
                         System.exit(0);
                     }
@@ -1130,32 +1220,47 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
         double time;
         for (int j = 0; j < totalIntervals; j++) {
             time = j < 1 ? 0 : times[j - 1];
-            int[] k = {0};
+            int[] k = { 0 };
             if (!SAModel) {
                 n[j] = ((j == 0) ? 0 : lineageCountAtTime(times[totalIntervals - 1] - time, tree));
             } else {
                 n[j] = ((j == 0) ? 0 : lineageCountAtTime(times[totalIntervals - 1] - time, tree, k));
             }
             if (n[j] > 0) {
-                temp = n[j] * (log_q(j, times[j], time) + FastMathLog(1 - rho[j-1]));
+                temp = n[j] * (log_q(j, times[j], time) + FastMathLog(1 - rho[j - 1]));
                 logP += temp;
                 if (printTempResults)
-                    System.out.println("3rd factor (nj loop) = " + temp + "; interval = " + j + "; n[j] = " + n[j]);//+ "; FastMathLog(g(j, times[j], time)) = " + FastMathLog(g(j, times[j], time)));
+                    System.out.println("3rd factor (nj loop) = " + temp + "; interval = " + j + "; n[j] = " + n[j]);// +
+                                                                                                                    // ";
+                                                                                                                    // FastMathLog(g(j,
+                                                                                                                    // times[j],
+                                                                                                                    // time))
+                                                                                                                    // =
+                                                                                                                    // "
+                                                                                                                    // +
+                                                                                                                    // FastMathLog(g(j,
+                                                                                                                    // times[j],
+                                                                                                                    // time)));
                 if (Double.isInfinite(logP))
                     return logP;
 
             }
 
-            if (SAModel && j>0 && N != null) { // term for sampled leaves and two-degree nodes at time t_i
-                logP += k[0] * (log_q(j, times[j], time) + FastMathLog(1-r[j])) + //here g(j,..) corresponds to q_{i+1}, r[j] to r_{i+1},
-                        (N[j-1]-k[0])*(FastMathLog(r[j]+ (1-r[j])*p0(j, times[j], time))); //N[j-1] to N_i, k[0] to K_i,and thus N[j-1]-k[0] to M_i
+            if (SAModel && j > 0 && N != null) { // term for sampled leaves and two-degree nodes at time t_i
+                logP += k[0] * (log_q(j, times[j], time) + FastMathLog(1 - r[j])) + // here g(j,..) corresponds to
+                                                                                    // q_{i+1}, r[j] to r_{i+1},
+                        (N[j - 1] - k[0]) * (FastMathLog(r[j] + (1 - r[j]) * p0(j, times[j], time))); // N[j-1] to N_i,
+                                                                                                      // k[0] to K_i,and
+                                                                                                      // thus
+                                                                                                      // N[j-1]-k[0] to
+                                                                                                      // M_i
                 if (Double.isInfinite(logP)) {
                     return logP;
                 }
             }
 
             if (rho[j] > 0 && N[j] > 0) {
-                temp = N[j] * FastMathLog(rho[j]);    // term for contemporaneous sampling
+                temp = N[j] * FastMathLog(rho[j]); // term for contemporaneous sampling
                 logP += temp;
                 if (printTempResults)
                     System.out.println("3rd factor (Nj loop) = " + temp + "; interval = " + j + "; N[j] = " + N[j]);
@@ -1166,15 +1271,16 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
         }
 
         if (SAModel) {
-            int internalNodeCount = tree.getLeafNodeCount() - ((Tree)tree).getDirectAncestorNodeCount()- 1;
-            logP +=  FastMathLog(2)*internalNodeCount;
+            int internalNodeCount = tree.getLeafNodeCount() - ((Tree) tree).getDirectAncestorNodeCount() - 1;
+            logP += FastMathLog(2) * internalNodeCount;
         }
 
         return logP;
     }
 
     public double calculateTreeLogLikelihood(Tree tree, Set<Taxon> exclude) {
-        if (exclude.size() == 0) return calculateTreeLogLikelihood(tree);
+        if (exclude.size() == 0)
+            return calculateTreeLogLikelihood(tree);
         throw new RuntimeException("Not implemented!");
     }
 
@@ -1183,18 +1289,19 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
         return true;
     }
 
-//    @Override
-//    public boolean canHandleTipDates() {
-//        boolean samplingThroughTime = false;
-//        RealParameter samplingParameter = samplingRate.get() != null ? samplingRate.get():samplingProportion.get();
-//        for (int i=0; i<samplingParameter.getDimension(); i++) {
-//            if (samplingParameter.getArrayValue(i) != 0) {
-//                samplingThroughTime = true;
-//                break;
-//            }
-//        }
-//        return samplingThroughTime;
-//    }
+    // @Override
+    // public boolean canHandleTipDates() {
+    // boolean samplingThroughTime = false;
+    // RealParameter samplingParameter = samplingRate.get() != null ?
+    // samplingRate.get():samplingProportion.get();
+    // for (int i=0; i<samplingParameter.getDimension(); i++) {
+    // if (samplingParameter.getArrayValue(i) != 0) {
+    // samplingThroughTime = true;
+    // break;
+    // }
+    // }
+    // return samplingThroughTime;
+    // }
 
     public boolean canHandleTipDates() {
         return !contempData;
@@ -1211,81 +1318,78 @@ public class BirthDeathSkylineModel extends SpeciesTreeDistribution {
     public int getSIRdimension() {
         throw new RuntimeException("This is not an SIR");
     }
-    
 
-    static double [] log, exp;
+    static double[] log, exp;
     final static double LOG_LOWER = 1.0;
     final static double LOG_UPPER = 1000.0;
-	final static double LOG_INTERVAL = 999.0;
+    final static double LOG_INTERVAL = 999.0;
     final static int LOG_LENGTH = 1000000;
 
     final static double EXP_LOWER = -100;
-	final static double EXP_UPPER = 0;
-	final static double EXP_INTERVAL = 100.0;
+    final static double EXP_UPPER = 0;
+    final static double EXP_INTERVAL = 100.0;
 
     static {
-    	log = new double[LOG_LENGTH + 2];
-    	for (int i = 0; i < LOG_LENGTH + 2; i++) {
-    		log[i] = Math.log(LOG_LOWER + LOG_INTERVAL * i / LOG_LENGTH);
-    	}
-    	// need LOG_LENGTH + 2 because it can happen that we have a number super close to 0,
-        //    so index=1000000,i=1000000 and thus i+1=1000001 will be out of bound for array of size LOG_LENGTH+1 only
-    	exp = new double[LOG_LENGTH + 2];
-    	for (int i = 0; i < LOG_LENGTH + 2; i++) {
-    		exp[i] = Math.exp(EXP_LOWER + EXP_INTERVAL * i / LOG_LENGTH);
-    	}
+        log = new double[LOG_LENGTH + 2];
+        for (int i = 0; i < LOG_LENGTH + 2; i++) {
+            log[i] = Math.log(LOG_LOWER + LOG_INTERVAL * i / LOG_LENGTH);
+        }
+        // need LOG_LENGTH + 2 because it can happen that we have a number super close
+        // to 0,
+        // so index=1000000,i=1000000 and thus i+1=1000001 will be out of bound for
+        // array of size LOG_LENGTH+1 only
+        exp = new double[LOG_LENGTH + 2];
+        for (int i = 0; i < LOG_LENGTH + 2; i++) {
+            exp[i] = Math.exp(EXP_LOWER + EXP_INTERVAL * i / LOG_LENGTH);
+        }
     }
-    
-	protected double FastMathLog(final double x) {
-		if (x < LOG_LOWER || x >= LOG_UPPER) {
-			return FastMath.log(x);
-		}
-		final double index = LOG_LENGTH * (x-LOG_LOWER) / LOG_INTERVAL;				
-		final int i = (int) index;
-		
-		// stepwise approximation
-		//return log[i];
-				
-		// linear approximation
-		return log[i] + (log[i+1]-log[i]) * (index - i);
-	}
 
-	
-	
-//	double min = Double.MAX_VALUE;
-//	double max = Double.MIN_VALUE;
-//	double count = 0;
-	
-	
-			
-	public double FastMathExp(final double x) {
-//		min = Math.min(x,  min);
-//		max = Math.max(x,  max);
-//		count++;
-//		if (count % 1000000 == 0) {
-//			System.out.println(min + " " + max);
-//			min = Double.MAX_VALUE;
-//			max = Double.MIN_VALUE;
-//		}
-		
-		if (x < EXP_LOWER || x >= EXP_UPPER) {
-			return FastMath.exp(x);
-		}
+    protected double FastMathLog(final double x) {
+        if (x < LOG_LOWER || x >= LOG_UPPER) {
+            return FastMath.log(x);
+        }
+        final double index = LOG_LENGTH * (x - LOG_LOWER) / LOG_INTERVAL;
+        final int i = (int) index;
 
-		final double index = LOG_LENGTH * (x - EXP_LOWER) / EXP_INTERVAL;				
-		final int i = (int) index;
-		
-		// stepwise approximation
-		// return exp[i];
-		
-		// linear approximation
-		return exp[i] + (exp[i+1]-exp[i]) * (index - i);
+        // stepwise approximation
+        // return log[i];
 
-	}
+        // linear approximation
+        return log[i] + (log[i + 1] - log[i]) * (index - i);
+    }
 
-//	protected double FastMathExp(final double x) {
-//		final long tmp = (long) (1512775 * x + 1072632447);
-//	    return Double.longBitsToDouble(tmp << 32);
-//	    // return FastMath.exp(x);
-//	}
+    // double min = Double.MAX_VALUE;
+    // double max = Double.MIN_VALUE;
+    // double count = 0;
+
+    public double FastMathExp(final double x) {
+        // min = Math.min(x, min);
+        // max = Math.max(x, max);
+        // count++;
+        // if (count % 1000000 == 0) {
+        // System.out.println(min + " " + max);
+        // min = Double.MAX_VALUE;
+        // max = Double.MIN_VALUE;
+        // }
+
+        if (x < EXP_LOWER || x >= EXP_UPPER) {
+            return FastMath.exp(x);
+        }
+
+        final double index = LOG_LENGTH * (x - EXP_LOWER) / EXP_INTERVAL;
+        final int i = (int) index;
+
+        // stepwise approximation
+        // return exp[i];
+
+        // linear approximation
+        return exp[i] + (exp[i + 1] - exp[i]) * (index - i);
+
+    }
+
+    // protected double FastMathExp(final double x) {
+    // final long tmp = (long) (1512775 * x + 1072632447);
+    // return Double.longBitsToDouble(tmp << 32);
+    // // return FastMath.exp(x);
+    // }
 }

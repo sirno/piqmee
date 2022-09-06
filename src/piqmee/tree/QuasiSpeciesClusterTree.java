@@ -1,10 +1,12 @@
 package piqmee.tree;
 
-import beast.core.*;
-import beast.evolution.alignment.Alignment;
-import beast.evolution.alignment.FilteredAlignment;
-import beast.util.ClusterTree;
-import beast.util.ClusterTree.*;
+import beast.base.core.Description;
+import beast.base.core.Input;
+import beast.base.evolution.alignment.Alignment;
+import beast.base.evolution.alignment.FilteredAlignment;
+import beast.base.evolution.tree.ClusterTree;
+import beast.base.evolution.tree.ClusterTree.*;
+import beast.base.inference.StateNodeInitialiser;
 
 import java.util.*;
 
@@ -13,13 +15,16 @@ import java.util.*;
  */
 
 @Description("Class to initialize a QuasiSpeciesTree from the alignment only")
-public class QuasiSpeciesClusterTree extends QuasiSpeciesTree implements StateNodeInitialiser{
+public class QuasiSpeciesClusterTree extends QuasiSpeciesTree implements StateNodeInitialiser {
 
-    final public Input<Type> clusterTypeInput = new Input<>("clusterType", "type of clustering algorithm used for generating initial beast.tree. " +
-            "Should be one of " + Arrays.toString(Type.values()) + " (default " + Type.average + ")", Type.average, Type.values());
+    final public Input<Type> clusterTypeInput = new Input<>("clusterType",
+            "type of clustering algorithm used for generating initial beast.tree. " +
+                    "Should be one of " + Arrays.toString(Type.values()) + " (default " + Type.average + ")",
+            Type.average, Type.values());
     public Input<Boolean> collapseIdenticalSequencesInput = new Input<>("collapseIdenticalSequences",
             "Should nodes that have identical sequences be collapsed to one haplotype? " +
-                    "Default true.", true);
+                    "Default true.",
+            true);
 
     public QuasiSpeciesClusterTree() {
     }
@@ -49,14 +54,15 @@ public class QuasiSpeciesClusterTree extends QuasiSpeciesTree implements StateNo
                 "clusterType", clusterTypeInput.get(),
                 "taxa", data);
 
-        // initialize the quasispecies tree - and collapse identical sequences, if necessary
+        // initialize the quasispecies tree - and collapse identical sequences, if
+        // necessary
         if (haplotypeCountsSet != null && !haplotypeCountIsAll1(haplotypeCountsSet))
             initFromUniqueHaploTree(inputTree, data,
                     collapseIdenticalSequencesInput.get(), collapseSequencesWithMissingDataInput.get(),
                     haplotypeCountsSet);
         else
             initFromFullTree(inputTree, data,
-                    collapseIdenticalSequencesInput.get(),collapseSequencesWithMissingDataInput.get());
+                    collapseIdenticalSequencesInput.get(), collapseSequencesWithMissingDataInput.get());
 
         initStateNodes();
     }
@@ -65,13 +71,6 @@ public class QuasiSpeciesClusterTree extends QuasiSpeciesTree implements StateNo
     public void initStateNodes() {
         if (m_initial.get() != null) {
             m_initial.get().assignFromWithoutID(this);
-        }
-    }
-
-    @Override
-    public void getInitialisedStateNodes(List<StateNode> stateNodes) {
-        if (m_initial.get() != null) {
-            stateNodes.add(m_initial.get());
         }
     }
 

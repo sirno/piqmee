@@ -1,14 +1,14 @@
 package beast.app.piqmee.beauti;
 
-import beast.app.beauti.BeautiDoc;
-import beast.app.beauti.BeautiPanelConfig;
-import beast.app.beauti.TipDatesInputEditor;
-import beast.app.draw.InputEditor;
-import beast.core.BEASTInterface;
-import beast.core.Input;
-import beast.evolution.alignment.TaxonSet;
-import beast.evolution.tree.TraitSet;
-import beast.app.beauti.GuessPatternDialog;
+import beastfx.app.inputeditor.BeautiDoc;
+import beastfx.app.inputeditor.BeautiPanelConfig;
+import beastfx.app.inputeditor.TipDatesInputEditor;
+import beastfx.app.inputeditor.InputEditor;
+import beast.base.core.BEASTInterface;
+import beast.base.core.Input;
+import beast.base.evolution.alignment.TaxonSet;
+import beast.base.evolution.tree.TraitSet;
+import beastfx.app.inputeditor.GuessPatternDialog;
 
 import java.awt.event.ActionEvent;
 import java.util.List;
@@ -17,7 +17,7 @@ import javax.swing.JButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
-import beast.evolution.tree.Tree;
+import beast.base.evolution.tree.Tree;
 import piqmee.tree.QuasiSpeciesTree;
 
 
@@ -44,7 +44,7 @@ public class HaplotypeCountsTraitSetInputEditor extends TipDatesInputEditor {
     @Override
     public void init(Input<?> input, BEASTInterface plugin, int itemNr, ExpandOption bExpandOption, boolean bAddButtons) {
 
-        if (plugin.getClass().getName().equals("beast.app.beauti.BeautiPanelConfig") && !((BeautiPanelConfig) plugin).getName().equals("Sequence Counts")){
+        if (plugin.getClass().getName().equals("beastfx.app.inputeditor.BeautiPanelConfig") && !((BeautiPanelConfig) plugin).getName().equals("Sequence Counts")){
             super.init(input, plugin, itemNr, bExpandOption, bAddButtons);
         } else {
 

@@ -1,38 +1,50 @@
 package piqmee.evolution.branchratemodel;
 
-import beast.core.Description;
-import beast.core.Input;
-import beast.core.parameter.IntegerParameter;
-import beast.core.parameter.RealParameter;
-import beast.core.util.Log;
-import beast.evolution.branchratemodel.BranchRateModel;
-import beast.evolution.branchratemodel.UCRelaxedClockModel;
-import beast.evolution.tree.Node;
-import beast.evolution.tree.Tree;
-import beast.math.distributions.ParametricDistribution;
-import beast.util.Randomizer;
+import beast.base.core.Description;
+import beast.base.core.Function;
+import beast.base.core.Input;
+import beast.base.inference.parameter.IntegerParameter;
+import beast.base.inference.parameter.RealParameter;
+import beast.base.core.Log;
+import beast.base.evolution.branchratemodel.BranchRateModel;
+import beast.base.evolution.branchratemodel.UCRelaxedClockModel;
+import beast.base.evolution.tree.Node;
+import beast.base.evolution.tree.Tree;
+import beast.base.inference.distribution.ParametricDistribution;
+import beast.base.util.Randomizer;
 import org.apache.commons.math.MathException;
 import piqmee.tree.QuasiSpeciesNode;
 
 import java.util.Arrays;
 
 /**
- *  @author Veronika Boskova created on 28/03/2019 based on A.Drummond's UCRelaxedClockModel class
+ * @author Veronika Boskova created on 28/03/2019 based on A.Drummond's
+ *         UCRelaxedClockModel class
  */
 @Description("Defines an uncorrelated relaxed molecular clock for PIQMEE model.")
 public class QuasiSpeciesUCRelaxedClockModel extends BranchRateModel.Base {
 
-    final public Input<ParametricDistribution> rateDistInput = new Input<>("distr", "the distribution governing the rates among branches. Must have mean of 1. The clock.rate parameter can be used to change the mean rate.", Input.Validate.REQUIRED);
-    final public Input<IntegerParameter> categoryInput = new Input<>("rateCategories", "the rate categories associated with nodes in the tree for sampling of individual rates among branches.", Input.Validate.REQUIRED);
+    final public Input<ParametricDistribution> rateDistInput = new Input<>("distr",
+            "the distribution governing the rates among branches. Must have mean of 1. The clock.rate parameter can be used to change the mean rate.",
+            Input.Validate.REQUIRED);
+    final public Input<IntegerParameter> categoryInput = new Input<>("rateCategories",
+            "the rate categories associated with nodes in the tree for sampling of individual rates among branches.",
+            Input.Validate.REQUIRED);
 
-    final public Input<Integer> numberOfDiscreteRates = new Input<>("numberOfDiscreteRates", "the number of discrete rate categories to approximate the rate distribution by. A value <= 0 will cause the number of categories to be set equal to the number of branches in the tree. (default = -1)", -1);
+    final public Input<Integer> numberOfDiscreteRates = new Input<>("numberOfDiscreteRates",
+            "the number of discrete rate categories to approximate the rate distribution by. A value <= 0 will cause the number of categories to be set equal to the number of branches in the tree. (default = -1)",
+            -1);
 
-    final public Input<RealParameter> quantileInput = new Input<>("rateQuantiles", "the rate quantiles associated with nodes in the tree for sampling of individual rates among branches.", Input.Validate.XOR, categoryInput);
+    final public Input<RealParameter> quantileInput = new Input<>("rateQuantiles",
+            "the rate quantiles associated with nodes in the tree for sampling of individual rates among branches.",
+            Input.Validate.XOR, categoryInput);
 
-    final public Input<Tree> treeInput = new Input<>("tree", "the tree this relaxed clock is associated with.", Input.Validate.REQUIRED);
-    final public Input<Boolean> normalizeInput = new Input<>("normalize", "Whether to normalize the average rate (default false).", false);
+    final public Input<Tree> treeInput = new Input<>("tree", "the tree this relaxed clock is associated with.",
+            Input.Validate.REQUIRED);
+    final public Input<Boolean> normalizeInput = new Input<>("normalize",
+            "Whether to normalize the average rate (default false).", false);
 
-    RealParameter meanRate;
+    Function meanRate;
 
     int LATTICE_SIZE_FOR_DISCRETIZED_RATES = 100;
 
@@ -47,7 +59,8 @@ public class QuasiSpeciesUCRelaxedClockModel extends BranchRateModel.Base {
     public void initAndValidate() {
 
         tree = treeInput.get();
-        // for purposes of relaxed clock in piqmee, we have to have number of branches equal to number of nodes+tips
+        // for purposes of relaxed clock in piqmee, we have to have number of branches
+        // equal to number of nodes+tips
         // (1 for root) but this should always be 1
         branchCount = tree.getNodeCount() + tree.getLeafNodeCount();
 
@@ -56,7 +69,8 @@ public class QuasiSpeciesUCRelaxedClockModel extends BranchRateModel.Base {
 
         if (!usingQuantiles) {
             LATTICE_SIZE_FOR_DISCRETIZED_RATES = numberOfDiscreteRates.get();
-            if (LATTICE_SIZE_FOR_DISCRETIZED_RATES <= 0) LATTICE_SIZE_FOR_DISCRETIZED_RATES = branchCount;
+            if (LATTICE_SIZE_FOR_DISCRETIZED_RATES <= 0)
+                LATTICE_SIZE_FOR_DISCRETIZED_RATES = branchCount;
             Log.info.println("  UCRelaxedClockModel: using " + LATTICE_SIZE_FOR_DISCRETIZED_RATES + " rate " +
                     "categories to approximate rate distribution across branches.");
         } else {
@@ -97,7 +111,7 @@ public class QuasiSpeciesUCRelaxedClockModel extends BranchRateModel.Base {
             rates = new double[LATTICE_SIZE_FOR_DISCRETIZED_RATES];
             storedRates = new double[LATTICE_SIZE_FOR_DISCRETIZED_RATES];
 
-            //System.arraycopy(rates, 0, storedRates, 0, rates.length);
+            // System.arraycopy(rates, 0, storedRates, 0, rates.length);
         }
         normalize = normalizeInput.get();
 
@@ -118,10 +132,11 @@ public class QuasiSpeciesUCRelaxedClockModel extends BranchRateModel.Base {
 
     @Override
     public double getRateForBranch(Node node) {
-        //since root is defined in BEAST context as a node without a parent and
-        //  we have partial branches that do not have a parent, we have to distinguish
-        //  the root by 2 criteria -- does it have a parent? if no, what is the number of the node
-        if (node.isRoot() && node.getNr() == (tree.getNodeCount()-1)) {
+        // since root is defined in BEAST context as a node without a parent and
+        // we have partial branches that do not have a parent, we have to distinguish
+        // the root by 2 criteria -- does it have a parent? if no, what is the number of
+        // the node
+        if (node.isRoot() && node.getNr() == (tree.getNodeCount() - 1)) {
             // root has no rate
             return 1;
         }
@@ -144,7 +159,7 @@ public class QuasiSpeciesUCRelaxedClockModel extends BranchRateModel.Base {
             renormalize = false;
         }
 
-        return getRawRate(node) * scaleFactor * meanRate.getValue();
+        return getRawRate(node) * scaleFactor * meanRate.getDoubleValues()[0];
     }
 
     /**
@@ -152,7 +167,7 @@ public class QuasiSpeciesUCRelaxedClockModel extends BranchRateModel.Base {
      */
     private void computeFactor() {
 
-        //scale mean rate to 1.0 or separate parameter
+        // scale mean rate to 1.0 or separate parameter
 
         double treeRate = 0.0;
         double treeTime = 0.0;
@@ -169,15 +184,16 @@ public class QuasiSpeciesUCRelaxedClockModel extends BranchRateModel.Base {
                     // the rates of internal branches
                     else {
                         // if no haplo passing through internal node, it is completely counted
-                        if (node.getContinuingHaploName() == -1){
+                        if (node.getContinuingHaploName() == -1) {
                             treeRate += getRawRateForCategory(node) * node.getLength();
                             treeTime += node.getLength();
                         }
                     }
-                    // add to rates + times for the partial branch from first split of haplo to next node
+                    // add to rates + times for the partial branch from first split of haplo to next
+                    // node
                     if (node.getHaploAboveName() != -1) {
                         int haploNr = node.getHaploAboveName();
-                        toyNode.setNr(haploNr+tree.getNodeCount());
+                        toyNode.setNr(haploNr + tree.getNodeCount());
                         QuasiSpeciesNode nodeHaplo = (QuasiSpeciesNode) tree.getNode(haploNr);
                         treeRate += getRawRateForCategory(toyNode) *
                                 (node.getParent().getHeight() - nodeHaplo.getAttachmentTimesList()[0]);
@@ -202,7 +218,8 @@ public class QuasiSpeciesUCRelaxedClockModel extends BranchRateModel.Base {
                             treeTime += node.getLength();
                         }
                     }
-                    // add to rates + times for the partial branch from first split of haplo to next node
+                    // add to rates + times for the partial branch from first split of haplo to next
+                    // node
                     if (node.getHaploAboveName() != -1) {
                         int haploNr = node.getHaploAboveName();
                         toyNode.setNr(haploNr + tree.getNodeCount());
@@ -280,11 +297,11 @@ public class QuasiSpeciesUCRelaxedClockModel extends BranchRateModel.Base {
 
         if (!usingQuantiles) {
             // rates array initialized to correct length in initAndValidate
-            // here we just reset rates to zero and they are computed by getRawRate(int i) as needed
+            // here we just reset rates to zero and they are computed by getRawRate(int i)
+            // as needed
             Arrays.fill(rates, 0.0);
         }
     }
-
 
     @Override
     protected boolean requiresRecalculation() {
@@ -297,15 +314,11 @@ public class QuasiSpeciesUCRelaxedClockModel extends BranchRateModel.Base {
         }
         // NOT processed as trait on the tree, so DO mark as dirty
         if (categoryInput.get() != null && categoryInput.get().somethingIsDirty()) {
-            //recompute = true;
+            // recompute = true;
             return true;
         }
 
         if (quantileInput.get() != null && quantileInput.get().somethingIsDirty()) {
-            return true;
-        }
-
-        if (meanRate.somethingIsDirty()) {
             return true;
         }
 
@@ -314,7 +327,8 @@ public class QuasiSpeciesUCRelaxedClockModel extends BranchRateModel.Base {
 
     @Override
     public void store() {
-        if (!usingQuantiles) System.arraycopy(rates, 0, storedRates, 0, rates.length);
+        if (!usingQuantiles)
+            System.arraycopy(rates, 0, storedRates, 0, rates.length);
 
         storedScaleFactor = scaleFactor;
         super.store();
@@ -348,7 +362,7 @@ public class QuasiSpeciesUCRelaxedClockModel extends BranchRateModel.Base {
     // this is for testing purposes only
     // set categories
     public void setCategories(int position, int category) {
-        categories.setValue(position,category);
+        categories.setValue(position, category);
     }
 
     // set categories

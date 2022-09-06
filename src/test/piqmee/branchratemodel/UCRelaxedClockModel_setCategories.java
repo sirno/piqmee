@@ -4,17 +4,17 @@ import java.util.Arrays;
 
 import org.apache.commons.math.MathException;
 
-import beast.core.Citation;
-import beast.core.Description;
-import beast.core.Input;
-import beast.core.parameter.IntegerParameter;
-import beast.core.parameter.RealParameter;
-import beast.core.util.Log;
-import beast.evolution.tree.Node;
-import beast.evolution.tree.Tree;
-import beast.math.distributions.ParametricDistribution;
-import beast.util.Randomizer;
-import beast.evolution.branchratemodel.BranchRateModel;
+import beast.base.core.Citation;
+import beast.base.core.Description;
+import beast.base.core.Input;
+import beast.base.inference.parameter.IntegerParameter;
+import beast.base.inference.parameter.RealParameter;
+import beast.base.core.Log;
+import beast.base.evolution.tree.Node;
+import beast.base.evolution.tree.Tree;
+import beast.base.inference.distribution.ParametricDistribution;
+import beast.base.util.Randomizer;
+import beast.base.evolution.branchratemodel.BranchRateModel;
 
 /**
  * @author Alexei Drummond

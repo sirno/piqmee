@@ -1,7 +1,11 @@
 package piqmee.util;
 
-import beast.core.*;
-import beast.evolution.tree.Node;
+import beast.base.core.Description;
+import beast.base.core.Function;
+import beast.base.core.Input;
+import beast.base.core.Loggable;
+import beast.base.evolution.tree.Node;
+import beast.base.inference.CalculationNode;
 import piqmee.tree.QuasiSpeciesNode;
 import piqmee.tree.QuasiSpeciesTree;
 
@@ -20,7 +24,8 @@ public class AbsoluteTreeHeight extends CalculationNode implements Function, Log
 
     protected QuasiSpeciesTree qsTree;
 
-    public AbsoluteTreeHeight() { };
+    public AbsoluteTreeHeight() {
+    };
 
     @Override
     public void initAndValidate() {
@@ -35,9 +40,9 @@ public class AbsoluteTreeHeight extends CalculationNode implements Function, Log
     @Override
     public double getArrayValue() {
         double absoluteHeight = qsTree.getRoot().getHeight();
-        for (Node node : qsTree.getExternalNodes()){
+        for (Node node : qsTree.getExternalNodes()) {
             double[] attachmentTimes = ((QuasiSpeciesNode) node).getAttachmentTimesList();
-            if (attachmentTimes.length > 1 && attachmentTimes[1] > absoluteHeight){
+            if (attachmentTimes.length > 1 && attachmentTimes[1] > absoluteHeight) {
                 absoluteHeight = attachmentTimes[1];
             }
         }
@@ -47,9 +52,9 @@ public class AbsoluteTreeHeight extends CalculationNode implements Function, Log
     @Override
     public double getArrayValue(int iDim) {
         double absoluteHeight = qsTree.getRoot().getHeight();
-        for (Node node : qsTree.getExternalNodes()){
+        for (Node node : qsTree.getExternalNodes()) {
             double[] attachmentTimes = ((QuasiSpeciesNode) node).getAttachmentTimesList();
-            if (attachmentTimes.length > 1 && attachmentTimes[1] > absoluteHeight){
+            if (attachmentTimes.length > 1 && attachmentTimes[1] > absoluteHeight) {
                 absoluteHeight = attachmentTimes[1];
             }
         }
@@ -57,7 +62,7 @@ public class AbsoluteTreeHeight extends CalculationNode implements Function, Log
     }
 
     @Override
-    public void init(PrintStream out){
+    public void init(PrintStream out) {
         if (getID() == null || getID().matches("\\s*")) {
             out.print(qsTree.getID() + ".absoluteHeight\t");
         } else {
@@ -65,12 +70,11 @@ public class AbsoluteTreeHeight extends CalculationNode implements Function, Log
         }
     }
 
-    @Override
-    public void log(int nSample, PrintStream out) {
+    public void log(long nSample, PrintStream out) {
         double absoluteHeight = qsTree.getRoot().getHeight();
-        for (Node node : qsTree.getExternalNodes()){
+        for (Node node : qsTree.getExternalNodes()) {
             double[] attachmentTimes = ((QuasiSpeciesNode) node).getAttachmentTimesList();
-            if (attachmentTimes.length > 1 && attachmentTimes[1] > absoluteHeight){
+            if (attachmentTimes.length > 1 && attachmentTimes[1] > absoluteHeight) {
                 absoluteHeight = attachmentTimes[1];
             }
         }
@@ -78,6 +82,7 @@ public class AbsoluteTreeHeight extends CalculationNode implements Function, Log
     }
 
     @Override
-    public void close(PrintStream out) { }
+    public void close(PrintStream out) {
+    }
 
 }

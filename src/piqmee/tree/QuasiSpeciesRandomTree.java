@@ -1,14 +1,15 @@
 package piqmee.tree;
 
-import beast.core.*;
-import beast.evolution.alignment.Alignment;
-import beast.evolution.alignment.FilteredAlignment;
-import beast.evolution.alignment.Taxon;
-import beast.evolution.alignment.TaxonSet;
-import beast.evolution.likelihood.GenericTreeLikelihood;
-import beast.evolution.tree.coalescent.PopulationFunction;
-import beast.math.distributions.MRCAPrior;
-import beast.evolution.tree.RandomTree;
+import beast.base.core.Description;
+import beast.base.evolution.alignment.Alignment;
+import beast.base.evolution.alignment.FilteredAlignment;
+import beast.base.evolution.alignment.Taxon;
+import beast.base.evolution.alignment.TaxonSet;
+import beast.base.evolution.likelihood.GenericTreeLikelihood;
+import beast.base.evolution.tree.coalescent.PopulationFunction;
+import beast.base.evolution.tree.MRCAPrior;
+import beast.base.evolution.tree.coalescent.RandomTree;
+import beast.base.inference.StateNodeInitialiser;
 
 import java.util.*;
 
@@ -17,11 +18,11 @@ import java.util.*;
  */
 
 @Description("Class to initialize a QuasiSpeciesTree from the provided alignment" +
-             " using coalescent to determine provided sequence topology." +
-             " If duplicate sequence counts are provided in haplotypeCountsInput," +
-             " their branching times will be evenly spread between the MRCA" +
-             " of identical sequence sub-tree and respective tip times.")
-public class QuasiSpeciesRandomTree extends QuasiSpeciesTree implements StateNodeInitialiser{
+        " using coalescent to determine provided sequence topology." +
+        " If duplicate sequence counts are provided in haplotypeCountsInput," +
+        " their branching times will be evenly spread between the MRCA" +
+        " of identical sequence sub-tree and respective tip times.")
+public class QuasiSpeciesRandomTree extends QuasiSpeciesTree implements StateNodeInitialiser {
 
     final public Input<PopulationFunction> populationFunctionInput = new Input<>("populationModel",
             "population function for generating coalescent???", Input.Validate.REQUIRED);
@@ -29,8 +30,8 @@ public class QuasiSpeciesRandomTree extends QuasiSpeciesTree implements StateNod
             "If specified the tree will be scaled to match the root height, if constraints allow this");
     public Input<Boolean> collapseIdenticalSequencesInput = new Input<>("collapseIdenticalSequences",
             "Should nodes that have identical sequences be collapsed to one haplotype? " +
-                    "Default true.", true);
-
+                    "Default true.",
+            true);
 
     public QuasiSpeciesRandomTree() {
     }
@@ -67,15 +68,15 @@ public class QuasiSpeciesRandomTree extends QuasiSpeciesTree implements StateNod
         // Get the distances for the sequences:
         double[][] distanceMatrix = getDistanceMatrix(data, toyRandomTree, collapseSequencesWithMissingDataInput.get());
         // specify monophyletic constraints
-        for (int i = 0; i < distanceMatrix.length; i++){
+        for (int i = 0; i < distanceMatrix.length; i++) {
             List<Taxon> identical = new ArrayList<>();
             Taxon currentTaxon = new Taxon(data.getTaxaNames().get(i));
             identical.add(currentTaxon);
-            for (int j = 0; j < i; j++){
+            for (int j = 0; j < i; j++) {
                 if (distanceMatrix[j][i] == 0)
                     continue;
             }
-            for (int k = i+1; k < distanceMatrix.length; k++ ) {
+            for (int k = i + 1; k < distanceMatrix.length; k++) {
                 if (distanceMatrix[k][i] == 0) {
                     Taxon newTaxon = new Taxon(data.getTaxaNames().get(k));
                     identical.add(newTaxon);
@@ -92,7 +93,8 @@ public class QuasiSpeciesRandomTree extends QuasiSpeciesTree implements StateNod
             monophyleticGroups.add(group);
         }
 
-        // initialize random tree with constraints specified such that all identical sequences form monophyletic clusters
+        // initialize random tree with constraints specified such that all identical
+        // sequences form monophyletic clusters
         RandomTree inputTree = new RandomTree();
         inputTree.setDateTrait(timeTraitSet);
         inputTree.initByName(
@@ -101,7 +103,8 @@ public class QuasiSpeciesRandomTree extends QuasiSpeciesTree implements StateNod
                 "constraint", monophyleticGroups,
                 "rootHeight", rootHeightInput.get());
 
-        // initialize the quasispecies tree - and collapse identical sequences, if necessary
+        // initialize the quasispecies tree - and collapse identical sequences, if
+        // necessary
         if (haplotypeCountsSet != null && !haplotypeCountIsAll1(haplotypeCountsSet))
             initFromUniqueHaploTree(inputTree, data,
                     collapseIdenticalSequencesInput.get(), collapseSequencesWithMissingDataInput.get(),
@@ -117,13 +120,6 @@ public class QuasiSpeciesRandomTree extends QuasiSpeciesTree implements StateNod
     public void initStateNodes() {
         if (m_initial.get() != null) {
             m_initial.get().assignFromWithoutID(this);
-        }
-    }
-
-    @Override
-    public void getInitialisedStateNodes(List<StateNode> stateNodes) {
-        if (m_initial.get() != null) {
-            stateNodes.add(m_initial.get());
         }
     }
 

@@ -1,7 +1,11 @@
 package piqmee.util;
 
-import beast.core.*;
-import beast.evolution.tree.Node;
+import beast.base.core.Description;
+import beast.base.core.Function;
+import beast.base.core.Input;
+import beast.base.core.Loggable;
+import beast.base.evolution.tree.Node;
+import beast.base.inference.CalculationNode;
 import piqmee.tree.QuasiSpeciesTree;
 import piqmee.tree.QuasiSpeciesNode;
 
@@ -20,7 +24,7 @@ public class AttachmentTimes extends CalculationNode implements Function, Loggab
 
     public Input<String> haplotypeInput = new Input<>(
             "haplotype", "Haplotype name, specifying for which haplotype" +
-            " in the tree the attachement times shoudl be logged.",
+                    " in the tree the attachement times shoudl be logged.",
             Input.Validate.REQUIRED);
 
     private QuasiSpeciesTree qsTree;
@@ -31,20 +35,21 @@ public class AttachmentTimes extends CalculationNode implements Function, Loggab
 
     private QuasiSpeciesNode haploNode;
 
-    public AttachmentTimes() { };
+    public AttachmentTimes() {
+    };
 
     @Override
     public void initAndValidate() {
         qsTree = quasiSpeciesTreeInput.get();
         haplotype = haplotypeInput.get();
-        for (Node node : qsTree.getExternalNodes()){
-            if (haplotype.equals(node.getID().toString())){
+        for (Node node : qsTree.getExternalNodes()) {
+            if (haplotype.equals(node.getID().toString())) {
                 haploNodeNr = node.getNr();
             }
         }
         // check if the tip name has been found in the tree
         if (haploNodeNr < 0) {
-            throw new RuntimeException("Tip "+haplotype+" could not be found. " +
+            throw new RuntimeException("Tip " + haplotype + " could not be found. " +
                     "Maybe it was collapsed with another sequence?");
         }
     }
@@ -68,7 +73,7 @@ public class AttachmentTimes extends CalculationNode implements Function, Loggab
     }
 
     @Override
-    public void init(PrintStream out){
+    public void init(PrintStream out) {
 
         String idString = qsTree.getID();
         haploNode = (QuasiSpeciesNode) qsTree.getNode(haploNodeNr);
@@ -79,8 +84,7 @@ public class AttachmentTimes extends CalculationNode implements Function, Loggab
         }
     }
 
-    @Override
-    public void log(int nSample, PrintStream out) {
+    public void log(long nSample, PrintStream out) {
         double[] attachmentTimes = haploNode.getAttachmentTimesList();
         for (int time = 0; time < attachmentTimes.length; time++) {
             out.print(attachmentTimes[time] + "\t");
@@ -88,5 +92,6 @@ public class AttachmentTimes extends CalculationNode implements Function, Loggab
     }
 
     @Override
-    public void close(PrintStream out) { }
+    public void close(PrintStream out) {
+    }
 }
